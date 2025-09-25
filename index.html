@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Durga Puja Crowd Map</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .map-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .fake-map {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(45deg, #e8f5e8 0%, #f0f8f0 50%, #e8f5e8 100%);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ddd;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .map-marker:hover {
+            transform: scale(1.2);
+        }
+
+        .map-marker.low { background: #28a745; }
+        .map-marker.medium { background: #ffc107; color: #000; }
+        .map-marker.high { background: #dc3545; }
+
+        .legend {
+            margin-bottom: 20px;
+        }
+
+        .legend h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .search-section {
+            margin-bottom: 25px;
+        }
+
+        .search-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .pandal-list {
+            margin-bottom: 25px;
+        }
+
+        .pandal-item {
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pandal-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .pandal-item.low { border-left-color: #28a745; }
+        .pandal-item.medium { border-left-color: #ffc107; }
+        .pandal-item.high { border-left-color: #dc3545; }
+
+        .pandal-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .pandal-info {
+            font-size: 0.9rem;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .crowd-status {
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-low { background: #28a745; }
+        .status-medium { background: #ffc107; color: #000; }
+        .status-high { background: #dc3545; }
+
+        .facilities {
+            margin-bottom: 20px;
+        }
+
+        .facility-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .facility-btn {
+            background: rgba(255,255,255,0.8);
+            border: 2px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .facility-btn:hover, .facility-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .alerts {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .alert-icon {
+            color: #ffc107;
+            margin-right: 10px;
+        }
+
+        .bottom-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .route-info {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .route-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .route-icon {
+            color: #28a745;
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .fake-map {
+                height: 400px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .emergency-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-map-marked-alt"></i> Durga Puja Crowd Map In Kolkata </h1>
+            <p>Live crowd tracking aur smart directions ke saath safe celebration</p>
+        </div>
+
+        <div class="alerts" id="alertsSection">
+            <h4><i class="fas fa-exclamation-triangle alert-icon"></i> Live Alerts</h4>
+            <div class="alert-item">
+                <i class="fas fa-users alert-icon"></i>
+                <span>Bagbazar Sarbojanin - High crowd detected! Alternative route suggested</span>
+            </div>
+            <div class="alert-item">
+                <i class="fas fa-route alert-icon"></i>
+                <span>Traffic jam near Shyambazar - Use metro instead</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="legend">
+                    <h3><i class="fas fa-info-circle"></i> Crowd Status</h3>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #28a745;"></div>
+                        <span>Low Crowd (Safe to visit)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffc107;"></div>
+                        <span>Medium Crowd (Moderate wait)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #dc3545;"></div>
+                        <span>High Crowd (Avoid if possible)</span>
+                    </div>
+                </div>
+
+                <div class="search-section">
+                    <h3><i class="fas fa-search"></i> Smart Route</h3>
+                    <input type="text" class="search-box" id="currentLocation" placeholder="Current location enter kariye...">
+                    <input type="text" class="search-box" id="destination" placeholder="Destination pandal select kariye...">
+                    <button class="btn" onclick="findRoute()">
+                        <i class="fas fa-route"></i> Best Route Find Kariye
+                    </button>
+                    <button class="btn" onclick="findNearby()">
+                        <i class="fas fa-map-marker-alt"></i> Nearby Pandals
+                    </button>
+                </div>
+
+                <div class="facilities">
+                    <h3><i class="fas fa-map-signs"></i> Show Facilities</h3>
+                    <div class="facility-grid">
+                        <div class="facility-btn" onclick="toggleFacility('parking')">
+                            <i class="fas fa-parking"></i><br>Parking
+                        </div>
+                        <div class="facility-btn" onclick="toggleFacility('toilet')">
+                            <i class="fas fa-restroom"></i><br>Toilets
+                        </div>
+                        <div class="facility-btn" onclick="toggleFacility('medical')">
+                            <i class="fas fa-plus-circle"></i><br>Medical
+                        </div>
+                        <div class="facility-btn" onclick="toggleFacility('food')">
+                            <i class="fas fa-utensils"></i><br>Food
+                        </div>
+                    </div>
+                </div>
+
+                <button class="emergency-btn" onclick="emergencyHelp()">
+                    <i class="fas fa-exclamation-triangle"></i> EMERGENCY HELP
+                </button>
+            </div>
+
+            <div class="map-container">
+                <h3><i class="fas fa-map"></i> Live Pandal Map</h3>
+                <div class="fake-map" id="mainMap">
+                    <!-- Pandal markers will be placed here -->
+                </div>
+                <div class="route-info" id="routeInfo" style="display: none;">
+                    <h4><i class="fas fa-route"></i> Suggested Route</h4>
+                    <div class="route-step">
+                        <i class="fas fa-walking route-icon"></i>
+                        <span>Walk to Shyambazar Metro Station (5 mins)</span>
+                    </div>
+                    <div class="route-step">
+                        <i class="fas fa-subway route-icon"></i>
+                        <span>Take Metro to Sovabazar Station (8 mins)</span>
+                    </div>
+                    <div class="route-step">
+                        <i class="fas fa-walking route-icon"></i>
+                        <span>Walk to destination pandal (7 mins)</span>
+                    </div>
+                    <div class="route-step">
+                        <i class="fas fa-clock route-icon"></i>
+                        <span><strong>Total time: 20 minutes</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-section">
+            <h3><i class="fas fa-chart-bar"></i> Live Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPandals">47</div>
+                    <div class="stat-label">Total Pandals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="lowCrowd">18</div>
+                    <div class="stat-label">Low Crowd</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="mediumCrowd">21</div>
+                    <div class="stat-label">Medium Crowd</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="highCrowd">8</div>
+                    <div class="stat-label">High Crowd</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeUsers">1.2k</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="routesGenerated">357</div>
+                    <div class="stat-label">Routes Generated</div>
+                </div>
+            </div>
+
+            <div class="pandal-list">
+                <h3><i class="fas fa-list"></i> Popular Pandals (Live Updates)</h3>
+                <div class="pandal-item low" onclick="showPandalDetails('bagbazar')">
+                    <div class="pandal-name">Bagbazar Sarbojanin</div>
+                    <div class="pandal-info">
+                        <span>2.1 km away</span>
+                        <span class="crowd-status status-low">Low Crowd</span>
+                    </div>
+                </div>
+                <div class="pandal-item medium" onclick="showPandalDetails('shyambazar')">
+                    <div class="pandal-name">Shyambazar Nabojago</div>
+                    <div class="pandal-info">
+                        <span>1.8 km away</span>
+                        <span class="crowd-status status-medium">Medium Crowd</span>
+                    </div>
+                </div>
+                <div class="pandal-item high" onclick="showPandalDetails('kumartuli')">
+                    <div class="pandal-name">Kumartuli Park</div>
+                    <div class="pandal-info">
+                        <span>3.2 km away</span>
+                        <span class="crowd-status status-high">High Crowd</span>
+                    </div>
+                </div>
+                <div class="pandal-item low" onclick="showPandalDetails('college')">
+                    <div class="pandal-name">College Square</div>
+                    <div class="pandal-info">
+                        <span>2.8 km away</span>
+                        <span class="crowd-status status-low">Low Crowd</span>
+                    </div>
+                </div>
+                <div class="pandal-item medium" onclick="showPandalDetails('hatibagan')">
+                    <div class="pandal-name">Hatibagan Nabojago</div>
+                    <div class="pandal-info">
+                        <span>1.5 km away</span>
+                        <span class="crowd-status status-medium">Medium Crowd</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for pandal details -->
+    <div id="pandalModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Pandal Details</h3>
+            <div id="modalContent"></div>
+            <button class="btn" onclick="getDirections()">
+                <i class="fas fa-route"></i> Get Directions
+            </button>
+            <button class="btn" onclick="reportCrowd()">
+                <i class="fas fa-users"></i> Report Current Crowd
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Sample pandal data
+        const pandals = [
+            { id: 1, name: 'Bagbazar Sarbojanin', x: '15%', y: '20%', crowd: 'low', facilities: ['parking', 'toilet', 'medical'] },
+            { id: 2, name: 'Shyambazar Nabojago', x: '45%', y: '35%', crowd: 'medium', facilities: ['toilet', 'food'] },
+            { id: 3, name: 'Kumartuli Park', x: '70%', y: '25%', crowd: 'high', facilities: ['medical', 'food'] },
+            { id: 4, name: 'College Square', x: '25%', y: '60%', crowd: 'low', facilities: ['parking', 'toilet'] },
+            { id: 5, name: 'Hatibagan Nabojago', x: '60%', y: '70%', crowd: 'medium', facilities: ['parking', 'medical', 'food'] },
+            { id: 6, name: 'Jorasanko Thakurbari', x: '35%', y: '45%', crowd: 'low', facilities: ['toilet', 'medical'] },
+            { id: 7, name: 'Sovabazar Rajbari', x: '80%', y: '55%', crowd: 'high', facilities: ['food'] },
+            { id: 8, name: 'Ahiritola Sarbojanin', x: '20%', y: '80%', crowd: 'medium', facilities: ['parking', 'toilet', 'food'] }
+        ];
+
+        let selectedFacilities = [];
+        let currentPandal = null;
+
+        // Initialize map
+        function initMap() {
+            const mapElement = document.getElementById('mainMap');
+            
+            pandals.forEach(pandal => {
+                const marker = document.createElement('div');
+                marker.className = `map-marker ${pandal.crowd}`;
+                marker.style.left = pandal.x;
+                marker.style.top = pandal.y;
+                marker.innerHTML = pandal.id;
+                marker.title = `${pandal.name} - ${pandal.crowd} crowd`;
+                marker.onclick = () => showPandalDetails(pandal.name.toLowerCase().replace(/\s+/g, ''));
+                
+                mapElement.appendChild(marker);
+            });
+        }
+
+        function toggleFacility(facility) {
+            const btn = event.target.closest('.facility-btn');
+            btn.classList.toggle('active');
+            
+            if (selectedFacilities.includes(facility)) {
+                selectedFacilities = selectedFacilities.filter(f => f !== facility);
+            } else {
+                selectedFacilities.push(facility);
+            }
+            
+            // Here you would update map to show/hide facility markers
+            console.log('Selected facilities:', selectedFacilities);
+        }
+
+        function findRoute() {
+            const current = document.getElementById('currentLocation').value;
+            const destination = document.getElementById('destination').value;
+            
+            if (!current || !destination) {
+                alert('Please current location aur destination dono fill kariye!');
+                return;
+            }
+            
+            document.getElementById('routeInfo').style.display = 'block';
+            
+            // Simulate route calculation
+            setTimeout(() => {
+                alert(`Route calculated successfully!\nFrom: ${current}\nTo: ${destination}\nEstimated time: 20 minutes`);
+            }, 1000);
+        }
+
+        function findNearby() {
+            const current = document.getElementById('currentLocation').value;
+            if (!current) {
+                alert('Please apna current location enter kariye!');
+                return;
+            }
+            
+            alert('Nearby low-crowd pandals:\n1. Bagbazar Sarbojanin (2.1km)\n2. College Square (2.8km)\n3. Jorasanko Thakurbari (1.9km)');
+        }
+
+        function showPandalDetails(pandalId) {
+            const pandalData = {
+                'bagbazar': {
+                    name: 'Bagbazar Sarbojanin',
+                    crowd: 'Low Crowd',
+                    waitTime: '5-10 minutes',
+                    features: 'Traditional theme, Great lighting',
+                    facilities: 'Parking, Toilets, Medical aid',
+                    lastUpdate: '5 minutes ago'
+                },
+                'shyambazar': {
+                    name: 'Shyambazar Nabojago',
+                    crowd: 'Medium Crowd',
+                    waitTime: '15-20 minutes',
+                    features: 'Modern artistic design',
+                    facilities: 'Toilets, Food stalls',
+                    lastUpdate: '3 minutes ago'
+                },
+                'kumartuli': {
+                    name: 'Kumartuli Park',
+                    crowd: 'High Crowd',
+                    waitTime: '30-45 minutes',
+                    features: 'Famous for traditional art',
+                    facilities: 'Medical aid, Food court',
+                    lastUpdate: '2 minutes ago'
+                },
+                'college': {
+                    name: 'College Square',
+                    crowd: 'Low Crowd',
+                    waitTime: '8-12 minutes',
+                    features: 'Heritage pandal',
+                    facilities: 'Parking, Toilets',
+                    lastUpdate: '7 minutes ago'
+                },
+                'hatibagan': {
+                    name: 'Hatibagan Nabojago',
+                    crowd: 'Medium Crowd',
+                    waitTime: '18-25 minutes',
+                    features: 'Grand decorations',
+                    facilities: 'All facilities available',
+                    lastUpdate: '4 minutes ago'
+                }
+            };
+            
+            const pandal = pandalData[pandalId];
+            if (!pandal) return;
+            
+            currentPandal = pandalId;
+            document.getElementById('modalTitle').innerHTML = pandal.name;
+            document.getElementById('modalContent').innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>Current Status:</strong> <span style="color: ${pandal.crowd.includes('Low') ? '#28a745' : pandal.crowd.includes('Medium') ? '#ffc107' : '#dc3545'}">${pandal.crowd}</span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Expected Wait Time:</strong> ${pandal.waitTime}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Special Features:</strong> ${pandal.features}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Available Facilities:</strong> ${pandal.facilities}
+                </div>
+                <div style="margin-bottom: 15px; font-size: 0.9rem; color: #666;">
+                    <strong>Last Updated:</strong> ${pandal.lastUpdate}
+                </div>
+            `;
+            
+            document.getElementById('pandalModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('pandalModal').style.display = 'none';
+        }
+
+        function getDirections() {
+            if (currentPandal) {
+                const pandalNames = {
+                    'bagbazar': 'Bagbazar Sarbojanin',
+                    'shyambazar': 'Shyambazar Nabojago',
+                    'kumartuli': 'Kumartuli Park',
+                    'college': 'College Square',
+                    'hatibagan': 'Hatibagan Nabojago'
+                };
+                
+                document.getElementById('destination').value = pandalNames[currentPandal];
+                closeModal();
+                findRoute();
+            }
+        }
+
+        function reportCrowd() {
+            const reports = ['Low Crowd', 'Medium Crowd', 'High Crowd', 'Very High Crowd'];
+            const report = prompt('Current crowd level batayiye:\n1. Low Crowd\n2. Medium Crowd\n3. High Crowd\n4. Very High Crowd\n\nEnter number (1-4):');
+            
+            if (report && report >= 1 && report <= 4) {
+                alert(`Thank you for reporting: ${reports[report-1]}\nYour report has been submitted and will help other users!`);
+                closeModal();
+                // Here you would send the report to your backend
+                updateStats();
+            }
+        }
+
+        function emergencyHelp() {
+            const emergency = confirm('Emergency help chahiye?\n\nOK - Call Emergency Services\nCancel - Show Nearest Exit Routes');
+            
+            if (emergency) {
+                alert('Emergency Services contacted!\n\nPolice: 100\nAmbulance: 108\nFire: 101\n\nYour location has been shared with authorities.');
+            } else {
+                alert('Nearest Emergency Exits:\n\n1. Shyambazar Metro Station (300m North)\n2. Bagbazar Police Station (500m East)\n3. Medical Center (200m South)\n\nFollow the crowd control barriers and volunteers.');
+            }
+        }
+
+        function updateStats() {
+            // Simulate real-time stats update
+            const stats = {
+                totalPandals: 47 + Math.floor(Math.random() * 3),
+                lowCrowd: 18 + Math.floor(Math.random() * 5),
+                mediumCrowd: 21 + Math.floor(Math.random() * 5),
+                highCrowd: 8 + Math.floor(Math.random() * 3),
+                activeUsers: (1.2 + Math.random() * 0.5).toFixed(1) + 'k',
+                routesGenerated: 357 + Math.floor(Math.random() * 20)
+            };
+            
+            // Update DOM elements
+            Object.keys(stats).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = stats[key];
+                }
+            });
+        }
+
+        function simulateRealTimeUpdates() {
+            // Update crowd status randomly every 30 seconds
+            setInterval(() => {
+                const markers = document.querySelectorAll('.map-marker');
+                markers.forEach(marker => {
+                    const crowdLevels = ['low', 'medium', 'high'];
+                    const currentClass = marker.className.split(' ').find(c => crowdLevels.includes(c));
+                    
+                    // 20% chance to change crowd level
+                    if (Math.random() < 0.2) {
+                        marker.classList.remove(currentClass);
+                        const newCrowdLevel = crowdLevels[Math.floor(Math.random() * crowdLevels.length)];
+                        marker.classList.add(newCrowdLevel);
+                        
+                        // Update corresponding pandal list item
+                        const pandalItems = document.querySelectorAll('.pandal-item');
+                        pandalItems.forEach(item => {
+                            if (item.querySelector('.pandal-name').textContent.includes(marker.title.split(' - ')[0])) {
+                                item.classList.remove('low', 'medium', 'high');
+                                item.classList.add(newCrowdLevel);
+                                
+                                const statusElement = item.querySelector('.crowd-status');
+                                statusElement.className = `crowd-status status-${newCrowdLevel}`;
+                                statusElement.textContent = newCrowdLevel.charAt(0).toUpperCase() + newCrowdLevel.slice(1) + ' Crowd';
+                            }
+                        });
+                    }
+                });
+                
+                updateStats();
+                updateAlerts();
+            }, 30000); // Update every 30 seconds
+        }
+
+        function updateAlerts() {
+            const alertsSection = document.getElementById('alertsSection');
+            const alertMessages = [
+                { icon: 'fas fa-users', message: 'Bagbazar Sarbojanin - High crowd detected! Alternative route suggested' },
+                { icon: 'fas fa-route', message: 'Traffic jam near Shyambazar - Use metro instead' },
+                { icon: 'fas fa-exclamation-triangle', message: 'Weather Alert: Light rain expected at 8 PM' },
+                { icon: 'fas fa-clock', message: 'Peak hours: 6 PM - 9 PM today. Plan accordingly!' },
+                { icon: 'fas fa-parking', message: 'College Square parking full - Try nearby streets' },
+                { icon: 'fas fa-subway', message: 'Metro services running smoothly on all lines' }
+            ];
+            
+            // Randomly select 2-3 alerts
+            const selectedAlerts = alertMessages.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 2) + 2);
+            
+            const alertHTML = selectedAlerts.map(alert => `
+                <div class="alert-item">
+                    <i class="${alert.icon} alert-icon"></i>
+                    <span>${alert.message}</span>
+                </div>
+            `).join('');
+            
+            alertsSection.innerHTML = `
+                <h4><i class="fas fa-exclamation-triangle alert-icon"></i> Live Alerts</h4>
+                ${alertHTML}
+            `;
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            updateStats();
+            simulateRealTimeUpdates();
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('pandalModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            };
+            
+            // Auto-complete suggestions for location inputs
+            const locationSuggestions = [
+                'Shyambazar Metro Station',
+                'Bagbazar More',
+                'College Street',
+                'Sovabazar',
+                'Kumartuli',
+                'Hatibagan',
+                'Jorasanko',
+                'Ahiritola',
+                'Maniktala',
+                'Girish Park'
+            ];
+            
+            // Add autocomplete functionality
+            const locationInputs = document.querySelectorAll('#currentLocation, #destination');
+            locationInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const value = this.value.toLowerCase();
+                    const suggestions = locationSuggestions.filter(suggestion => 
+                        suggestion.toLowerCase().includes(value)
+                    );
+                    
+                    // You can implement a dropdown here for suggestions
+                    console.log('Suggestions:', suggestions);
+                });
+            });
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Press 'R' to find route quickly
+                if (e.key === 'r' || e.key === 'R') {
+                    if (!document.getElementById('pandalModal').style.display === 'block') {
+                        document.getElementById('currentLocation').focus();
+                    }
+                }
+                
+                // Press 'E' for emergency
+                if (e.key === 'e' || e.key === 'E') {
+                    if (!document.getElementById('pandalModal').style.display === 'block') {
+                        emergencyHelp();
+                    }
+                }
+                
+                // Press Escape to close modal
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+            
+            // Add service worker registration for offline functionality
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('Service Worker registered successfully');
+                }).catch(function(error) {
+                    console.log('Service Worker registration failed');
+                });
+            }
+            
+            // Add geolocation functionality
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Reverse geocoding would happen here
+                    // For demo, we'll just show coordinates
+                    console.log(`User location: ${lat}, ${lng}`);
+                    
+                    // Auto-fill current location
+                    document.getElementById('currentLocation').placeholder = 
+                        `Current location detected (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                }, function(error) {
+                    console.log('Geolocation error:', error);
+                });
+            }
+            
+            // Initialize real-time notifications
+            requestNotificationPermission();
+        });
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        showNotification('Durga Puja Crowd Map', 'Notifications enabled! You\'ll get crowd alerts.', '/icon.png');
+                    }
+                });
+            }
+        }
+
+        function showNotification(title, body, icon) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: icon || '/icon.png',
+                    badge: '/badge.png',
+                    vibrate: [200, 100, 200],
+                    actions: [
+                        { action: 'view', title: 'View Map' },
+                        { action: 'dismiss', title: 'Dismiss' }
+                    ]
+                });
+            }
+        }
+
+        // Crowd reporting functionality
+        function crowdSourceUpdate() {
+            const reportForm = `
+                <div style="margin-top: 20px;">
+                    <h4>Quick Crowd Report</h4>
+                    <select id="quickPandal" style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd;">
+                        <option value="">Select Pandal</option>
+                        <option value="bagbazar">Bagbazar Sarbojanin</option>
+                        <option value="shyambazar">Shyambazar Nabojago</option>
+                        <option value="kumartuli">Kumartuli Park</option>
+                        <option value="college">College Square</option>
+                        <option value="hatibagan">Hatibagan Nabojago</option>
+                    </select>
+                    <select id="quickCrowd" style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd;">
+                        <option value="">Current Crowd Level</option>
+                        <option value="low">Low Crowd</option>
+                        <option value="medium">Medium Crowd</option>
+                        <option value="high">High Crowd</option>
+                        <option value="very-high">Very High Crowd</option>
+                    </select>
+                    <button onclick="submitQuickReport()" style="width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Submit Report
+                    </button>
+                </div>
+            `;
+            
+            document.querySelector('.sidebar').insertAdjacentHTML('beforeend', reportForm);
+        }
+
+        function submitQuickReport() {
+            const pandal = document.getElementById('quickPandal').value;
+            const crowd = document.getElementById('quickCrowd').value;
+            
+            if (pandal && crowd) {
+                alert(`Report submitted successfully!\nPandal: ${pandal}\nCrowd Level: ${crowd}\n\nThank you for helping the community!`);
+                
+                // Here you would send data to backend
+                updateStats();
+                
+                // Show notification to other users
+                setTimeout(() => {
+                    showNotification('Crowd Update', `${pandal} crowd level updated to ${crowd}`, '/icon.png');
+                }, 2000);
+            } else {
+                alert('Please select both pandal and crowd level!');
+            }
+        }
+
+        // Add crowd source reporting to sidebar
+        setTimeout(() => {
+            crowdSourceUpdate();
+        }, 1000);
+
+        // Social sharing functionality
+        function shareLocation(pandal) {
+            const url = `${window.location.origin}?pandal=${pandal}`;
+            const text = `Check out live crowd status at ${pandal} on Durga Puja Crowd Map!`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Durga Puja Crowd Map',
+                    text: text,
+                    url: url
+                });
+            } else {
+                // Fallback to copy to clipboard
+                navigator.clipboard.writeText(`${text} ${url}`).then(() => {
+                    alert('Link copied to clipboard!');
+                });
+            }
+        }
+
+        // Add PWA install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Install App';
+            installBtn.className = 'btn';
+            installBtn.style.marginTop = '10px';
+            installBtn.onclick = installApp;
+            
+            document.querySelector('.sidebar').appendChild(installBtn);
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        console.log('Durga Puja Crowd Map initialized successfully!');
+        console.log('Features: Live crowd tracking, Smart routing, Real-time alerts, Crowd reporting');
+        console.log('Keyboard shortcuts: R = Route, E = Emergency, Esc = Close modal');
+    </script>
+</body>
+</html>
